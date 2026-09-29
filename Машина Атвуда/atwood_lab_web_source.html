@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#102b43">
+  <meta name="description" content="Виртуальная лабораторная работа: определение ускорения свободного падения с помощью машины Атвуда.">
+  <title>Машина Атвуда — лабораторная работа</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23102b43'/%3E%3Ccircle cx='32' cy='15' r='9' fill='none' stroke='%23f2ae49' stroke-width='5'/%3E%3Cpath d='M23 15v25m18-25v25M23 40h18' fill='none' stroke='%23f7f4ed' stroke-width='3'/%3E%3Crect x='16' y='39' width='14' height='16' rx='2' fill='%2357c5b6'/%3E%3Crect x='35' y='29' width='14' height='16' rx='2' fill='%23f2ae49'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #102b43;
+      --muted: #526879;
+      --paper: #f4f7f8;
+      --surface: #fff;
+      --line: #d6e0e5;
+      --navy: #102b43;
+      --teal: #087e83;
+      --teal-soft: #e4f5f2;
+      --amber: #e89b2d;
+      --amber-soft: #fff3dc;
+      --red: #b6453b;
+      --shadow: 0 12px 32px rgba(16, 43, 67, .08);
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font-size: 16px; line-height: 1.5; }
+    button, select, input { font: inherit; }
+    button, select { -webkit-tap-highlight-color: transparent; }
+    .page { width: min(1160px, 100% - 32px); margin: 0 auto; padding: 22px 0 48px; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .brand-mark { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 13px; background: var(--navy); color: var(--amber); flex: 0 0 auto; }
+    .brand-mark svg { width: 27px; height: 27px; }
+    h1 { margin: 0; font-size: clamp(1.2rem, 3vw, 1.75rem); letter-spacing: -.025em; line-height: 1.15; }
+    .eyebrow { margin: 0 0 3px; color: var(--teal); font-size: .8rem; font-weight: 750; letter-spacing: .09em; text-transform: uppercase; }
+    .header-tag { border: 1px solid var(--line); border-radius: 999px; padding: 7px 12px; color: var(--muted); background: var(--surface); font-size: .85rem; white-space: nowrap; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(290px, .9fr); gap: 16px; align-items: start; }
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); }
+    .machine-card { overflow: hidden; }
+    .machine-top { display: flex; justify-content: space-between; align-items: flex-start; padding: 17px 19px 10px; gap: 12px; }
+    .machine-top h2, .panel h2 { margin: 0; font-size: 1.08rem; letter-spacing: -.01em; }
+    .small-note { margin: 3px 0 0; color: var(--muted); font-size: .88rem; }
+    .state-pill { display: inline-flex; align-items: center; gap: 7px; border-radius: 999px; padding: 6px 10px; background: #edf2f4; color: #435766; font-size: .82rem; font-weight: 700; white-space: nowrap; }
+    .state-pill::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #8799a4; }
+    .state-pill[data-state="running"] { color: #075e60; background: var(--teal-soft); }
+    .state-pill[data-state="running"]::before { background: var(--teal); }
+    .state-pill[data-state="done"] { color: #78500e; background: var(--amber-soft); }
+    .state-pill[data-state="done"]::before { background: var(--amber); }
+    .machine-wrap { padding: 0 9px; background: linear-gradient(180deg, #f7fafb, #eef4f6); border-block: 1px solid var(--line); }
+    #machine { display: block; width: 100%; height: clamp(390px, 54vw, 520px); touch-action: manipulation; }
+    .machine-caption { padding: 10px 18px 14px; display: flex; justify-content: space-between; gap: 10px; color: var(--muted); font-size: .85rem; }
+    .timer-strip { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 17px 17px; }
+    .timer-display { font-variant-numeric: tabular-nums; font-weight: 800; letter-spacing: .025em; font-size: clamp(2.15rem, 8vw, 3.1rem); line-height: 1; color: var(--navy); }
+    .timer-label { display: block; margin-top: 6px; color: var(--muted); font-size: .82rem; }
+    .timer-actions { display: flex; gap: 9px; }
+    .button { border: 0; border-radius: 12px; min-height: 48px; padding: 10px 16px; font-weight: 750; cursor: pointer; transition: transform .12s, background .15s, opacity .15s; }
+    .button:active { transform: scale(.98); }
+    .button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid #39a9aa; outline-offset: 2px; }
+    .button-primary { background: var(--teal); color: white; min-width: 112px; }
+    .button-primary:hover { background: #066d72; }
+    .button-primary.stop { background: var(--red); }
+    .button-secondary { color: var(--ink); background: #eaf0f3; }
+    .button-secondary:hover { background: #dce7eb; }
+    .button:disabled { opacity: .48; cursor: not-allowed; }
+    .side { display: grid; gap: 14px; }
+    .panel { padding: 17px; }
+    .panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 14px; }
+    .step-count { color: var(--muted); font-size: .82rem; }
+    .field { display: grid; gap: 6px; margin: 13px 0; }
+    .field label { font-size: .9rem; font-weight: 700; }
+    .field select, .field input { width: 100%; min-height: 46px; border: 1px solid #bdcbd2; border-radius: 10px; background: white; color: var(--ink); padding: 9px 12px; }
+    .input-unit { display: flex; align-items: center; gap: 9px; }
+    .input-unit input { min-width: 0; }
+    .unit { color: var(--muted); font-weight: 650; }
+    .field-hint { color: var(--muted); font-size: .82rem; margin-top: -2px; }
+    .fixed-value { min-height: 46px; border: 1px solid var(--line); border-radius: 10px; background: #f4f7f8; display: flex; align-items: center; padding: 9px 12px; font-weight: 750; }
+    .setup-summary { display: flex; flex-wrap: wrap; gap: 7px; margin: 15px 0 0; }
+    .chip { border-radius: 8px; padding: 5px 8px; color: #285163; background: #eef5f7; font-size: .82rem; font-weight: 650; }
+    .repeat { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; border-top: 1px solid var(--line); margin-top: 14px; padding-top: 13px; }
+    .repeat strong { display: block; }
+    .repeat span { color: var(--muted); font-size: .85rem; }
+    .repeat-dots { display: flex; gap: 5px; }
+    .repeat-dots i { width: 10px; height: 10px; border-radius: 50%; background: #d6e0e5; }
+    .repeat-dots i.active { background: var(--teal); }
+    .condition-button { width: 100%; margin-top: 12px; }
+    .notice { margin: 13px 0 0; padding: 10px 11px; border-radius: 10px; color: #67470e; background: var(--amber-soft); font-size: .86rem; }
+    .guide { margin-top: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    details { padding: 0; overflow: hidden; }
+    summary { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 17px 18px; cursor: pointer; font-weight: 750; list-style: none; }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: "+"; font-size: 1.25rem; font-weight: 500; color: var(--teal); }
+    details[open] summary::after { content: "−"; }
+    .details-body { padding: 0 18px 18px; border-top: 1px solid #edf1f3; color: #314a5b; }
+    .details-body p { margin: 12px 0; }
+    .details-body ul, .details-body ol { padding-left: 1.25rem; margin: 9px 0; }
+    .details-body li { margin: 7px 0; }
+    .formula { overflow-x: auto; padding: 10px 12px; background: #f2f6f7; border-radius: 10px; font-family: ui-monospace, "Cascadia Code", monospace; font-size: .96rem; color: #143c53; white-space: nowrap; }
+    .mode-note { padding: 10px 12px; border-left: 3px solid var(--teal); border-radius: 0 9px 9px 0; background: #f0f8f7; font-size: .9rem; }
+    .footer { text-align: center; color: var(--muted); margin: 19px 0 0; font-size: .82rem; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    @media (max-width: 820px) {
+      .layout { grid-template-columns: 1fr; }
+      .side { grid-template-columns: 1fr 1fr; }
+      .side .panel:first-child { grid-column: 1 / -1; }
+      .guide { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 540px) {
+      .page { width: min(100% - 20px, 480px); padding-top: 12px; }
+      header { align-items: flex-start; margin-bottom: 12px; }
+      .header-tag { font-size: .76rem; padding: 6px 9px; }
+      .brand { gap: 9px; }
+      .brand-mark { width: 39px; height: 39px; border-radius: 11px; }
+      .layout { gap: 11px; }
+      .card { border-radius: 15px; }
+      .machine-top { padding: 13px 13px 7px; }
+      .state-pill { font-size: .75rem; padding: 5px 8px; }
+      #machine { height: 410px; }
+      .machine-caption { padding: 8px 12px 10px; font-size: .78rem; }
+      .timer-strip { padding: 12px; gap: 8px; }
+      .timer-actions { gap: 7px; }
+      .button { min-height: 48px; padding: 9px 12px; }
+      .button-primary { min-width: 92px; }
+      .side { grid-template-columns: 1fr; gap: 11px; }
+      .side .panel:first-child { grid-column: auto; }
+      .panel { padding: 14px; }
+      .field { margin: 11px 0; }
+      .guide { margin-top: 11px; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="7" r="4.5" stroke="currentColor" stroke-width="2.5"/><path d="M11.5 7v15m9-15v15M11.5 22h9" stroke="#fff" stroke-width="2"/><rect x="7" y="21" width="8" height="8" rx="1.5" fill="#57c5b6"/><rect x="18" y="16" width="8" height="8" rx="1.5" fill="#e89b2d"/></svg></span>
+        <div><p class="eyebrow">Лабораторная работа</p><h1>Машина Атвуда</h1></div>
+      </div>
+      <span class="header-tag">Физика · Механика</span>
+    </header>
+
+    <section class="layout" aria-label="Виртуальная установка">
+      <article class="card machine-card">
+        <div class="machine-top">
+          <div><h2>Установка</h2><p class="small-note">Нажмите «ВКЛ», затем остановите таймер вручную у отметки h₁.</p></div>
+          <span id="state-pill" class="state-pill" data-state="ready" role="status">Готово</span>
+        </div>
+        <div class="machine-wrap">
+          <svg id="machine" viewBox="0 0 540 560" role="img" aria-labelledby="machine-title machine-desc" preserveAspectRatio="xMidYMid meet">
+            <title id="machine-title">Анимация машины Атвуда и линейка от нуля до ста сантиметров</title>
+            <desc id="machine-desc">Два груза соединены нитью через блок. Правый груз движется вниз, левый вверх. Шкала показывает высоту h от нижней отметки.</desc>
+            <defs>
+              <linearGradient id="beam" x1="0" x2="1"><stop stop-color="#244c63"/><stop offset="1" stop-color="#102b43"/></linearGradient>
+              <filter id="soft-shadow" x="-.3" y="-.3" width="1.6" height="1.8"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#102b43" flood-opacity=".16"/></filter>
+            </defs>
+            <rect x="18" y="16" width="504" height="525" rx="18" fill="#f8fbfc"/>
+            <rect x="99" y="45" width="18" height="486" rx="8" fill="#dce6ea"/>
+            <rect x="478" y="45" width="18" height="486" rx="8" fill="#dce6ea"/>
+            <path d="M108 58H487" stroke="url(#beam)" stroke-width="14" stroke-linecap="round"/>
+            <path d="M108 58v472M487 58v472" stroke="#67808d" stroke-width="5" stroke-linecap="round"/>
+            <circle cx="333" cy="55" r="40" fill="#d8e5e9" stroke="#102b43" stroke-width="4"/>
+            <circle cx="333" cy="55" r="5" fill="#102b43"/>
+            <path d="M333 15v-6" stroke="#e89b2d" stroke-width="4" stroke-linecap="round"/>
+            <line x1="110" y1="130" x2="110" y2="530" stroke="#91a5af" stroke-width="2"/>
+            <g id="ticks"></g>
+            <g id="ruler-labels"></g>
+            <text x="72" y="35" text-anchor="end" fill="#526879" font-size="13" font-weight="700">см</text>
+            <g id="rope" fill="none" stroke="#314a5b" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+              <path id="rope-path" d=""/>
+            </g>
+            <g id="left-weight" filter="url(#soft-shadow)">
+              <rect id="left-body" x="262" y="0" width="62" height="46" rx="7" fill="#168f8b" stroke="#0c6869" stroke-width="2"/>
+              <rect id="left-accent" x="270" y="0" width="46" height="8" rx="3" fill="#a9e0d9" opacity=".7"/>
+              <text id="left-label" x="293" y="0" text-anchor="middle" fill="white" font-size="13" font-weight="750">M</text>
+            </g>
+            <g id="right-weight" filter="url(#soft-shadow)">
+              <rect id="right-body" x="342" y="0" width="62" height="46" rx="7" fill="#e89b2d" stroke="#bd7414" stroke-width="2"/>
+              <rect id="right-accent" x="350" y="0" width="46" height="8" rx="3" fill="#ffe3ae" opacity=".8"/>
+              <text id="right-label" x="373" y="0" text-anchor="middle" fill="#482c08" font-size="12" font-weight="750">M + m</text>
+            </g>
+            <g id="h-marks">
+              <line id="h1-mark" x1="101" x2="130" y1="0" y2="0" stroke="#b6453b" stroke-width="3"/>
+              <text id="h1-label" x="135" y="0" fill="#b6453b" font-size="14" font-weight="750">h₁</text>
+              <line id="h2-mark" x1="101" x2="130" y1="0" y2="0" stroke="#e89b2d" stroke-width="3"/>
+              <text id="h2-label" x="135" y="0" fill="#a86913" font-size="14" font-weight="750">h₂</text>
+            </g>
+            <line id="gate" x1="188" x2="450" y1="0" y2="0" stroke="#b6453b" stroke-width="2.5" stroke-dasharray="7 6" opacity=".8"/>
+            <text id="gate-label" x="452" y="0" fill="#b6453b" font-size="12" font-weight="700">h₁</text>
+          </svg>
+        </div>
+        <div class="machine-caption"><span>Шкала фиксированная: 0–100 см</span><span>Точка отсчёта h₁ — нижняя отметка</span></div>
+        <div class="timer-strip">
+          <div><div id="timer" class="timer-display" aria-live="off">0.000</div><span class="timer-label">секундомер, с</span></div>
+          <div class="timer-actions">
+            <button id="toggle-timer" class="button button-primary" type="button">ВКЛ</button>
+            <button id="reset" class="button button-secondary" type="button">Сброс</button>
+          </div>
+        </div>
+      </article>
+
+      <aside class="side">
+        <section class="card panel" aria-labelledby="settings-title">
+          <div class="panel-heading"><h2 id="settings-title">Условия опыта</h2><span class="step-count">Настройте до запуска</span></div>
+          <div class="field">
+            <label for="mode">Режим работы</label>
+            <select id="mode">
+              <option value="height">1. Изменять высоту H</option>
+              <option value="mass">2. Изменять перегрузок m</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="mass-M">Масса одного груза M</label>
+            <div class="input-unit"><input id="mass-M" type="number" min="50" max="1000" step="10" value="200" inputmode="numeric"><span class="unit">г</span></div>
+            <span class="field-hint">Одинаковая масса на каждой чашке.</span>
+          </div>
+          <div class="field">
+            <label for="overload">Перегрузок m</label>
+            <select id="overload"><option value="10">10 г</option><option value="20" selected>20 г</option><option value="30">30 г</option><option value="40">40 г</option><option value="50">50 г</option></select>
+          </div>
+          <div class="field" id="height-field">
+            <label for="height">Высота перемещения H</label>
+            <div class="input-unit"><select id="height"></select><span class="unit">см</span></div>
+            <span id="height-hint" class="field-hint">Выберите высоту от 40 до 100 см.</span>
+          </div>
+          <div id="fixed-height-field" class="field" hidden>
+            <label>Высота перемещения H</label><div class="fixed-value">50 см</div><span class="field-hint">Во втором режиме высота постоянна.</span>
+          </div>
+          <div class="setup-summary" aria-label="Текущие параметры"><span id="chip-M" class="chip">M = 200 г</span><span id="chip-m" class="chip">m = 20 г</span><span id="chip-H" class="chip">H = 40 см</span></div>
+          <div class="repeat">
+            <div><strong id="repeat-title">Повтор: 1 из 3</strong><span id="repeat-hint">Запишите время от руки.</span></div>
+            <div class="repeat-dots" aria-hidden="true"><i class="active"></i><i></i><i></i></div>
+          </div>
+          <button id="next" class="button button-secondary condition-button" type="button">Следующее измерение</button>
+          <p id="message" class="notice" role="status">Нажмите «ВКЛ», чтобы начать движение и отсчёт времени.</p>
+        </section>
+        <section class="card panel">
+          <div class="panel-heading"><h2>Перед запуском</h2></div>
+          <ol class="details-body" style="border:0;padding:0;margin:0 0 0 1.15rem">
+            <li>Запишите выбранные M, m и H в бланк.</li>
+            <li>Нажмите «ВКЛ» и следите за нижним краем правого груза.</li>
+            <li>Когда он дойдёт до h₁, нажмите «ВЫКЛ» сами.</li>
+            <li>Запишите время и выполните три повтора.</li>
+          </ol>
+          <p class="notice">Результаты не сохраняются на сайте. Переносите показания в бумажный отчёт сразу после каждого опыта.</p>
+        </section>
+      </aside>
+    </section>
+
+    <section class="guide" aria-label="Описание лабораторной работы">
+      <details class="card">
+        <summary>Цель и теория</summary>
+        <div class="details-body">
+          <p><strong>Цель:</strong> определить ускорение свободного падения с помощью машины Атвуда и оценить случайную погрешность измерения времени.</p>
+          <p>Два груза массой M и M + m соединены лёгкой нерастяжимой нитью, перекинутой через блок. Перегрузок m создаёт результирующую силу, поэтому система движется с ускорением.</p>
+          <div class="formula">a = g · m / (2M + m)</div>
+          <p>Если система начинает движение из состояния покоя и проходит расстояние H за время t:</p>
+          <div class="formula">H = a·t²/2 &nbsp;&nbsp; ⇒ &nbsp;&nbsp; g = 2H(2M + m)/(m·t²)</div>
+          <p>В первом режиме ускорение находят по графику 2H от t²: наклон прямой равен a. Во втором режиме вычисляют a и g для каждого значения перегрузка.</p>
+          <p class="mode-note">На рисунке H = h₂ − h₁. Правая гиря опускается на H, левая поднимается на такое же расстояние; суммарная длина нити остаётся неизменной.</p>
+        </div>
+      </details>
+      <details class="card">
+        <summary>Порядок работы и отчёт</summary>
+        <div class="details-body">
+          <ol>
+            <li><strong>Режим 1:</strong> зафиксируйте m и M. Измерьте время движения при H = 40, 50, 60, 70, 80, 90 и 100 см. Для каждой высоты выполните три запуска.</li>
+            <li><strong>Режим 2:</strong> зафиксируйте H = 50 см и M. Измерьте время при m = 10, 20, 30, 40 и 50 г, три раза для каждого значения.</li>
+            <li>Для каждого набора повторов найдите среднее время. В первом режиме постройте график 2H(t²) и определите ускорение по наклону прямой.</li>
+            <li>Вычислите g и оцените доверительную случайную погрешность. Сравните результат с табличным значением 9,81 м/с².</li>
+          </ol>
+          <p>В отчёте укажите таблицы измерений, пример расчёта, график для первого режима, итоговое значение g с погрешностью и вывод о влиянии реакции человека на результат.</p>
+          <p class="mode-note">Секундомер останавливается только по нажатию кнопки. Время реакции добавляет случайную составляющую погрешности — поэтому выполняйте несколько повторов.</p>
+        </div>
+      </details>
+    </section>
+    <p class="footer">Перед новым условием опыта нажмите «Сброс». Сайт не отправляет и не хранит ваши измерения.</p>
+  </main>
+
+  <script>
+  (() => {
+    "use strict";
+    const $ = (id) => document.getElementById(id);
+    const mode = $("mode"), massM = $("mass-M"), overload = $("overload"), heightSelect = $("height");
+    const timer = $("timer"), toggle = $("toggle-timer"), reset = $("reset"), next = $("next");
+    const status = $("state-pill"), message = $("message"), repeatTitle = $("repeat-title");
+    const dots = [...document.querySelectorAll(".repeat-dots i")];
+    const NS = "http://www.w3.org/2000/svg";
+    const ruler = {x: 110, yTop: 150, yBottom: 530, pxPerCm: 3.8};
+    const massHeight = 46;
+    let progress = 0, timerOn = false, startedAt = 0, elapsed = 0, frame = 0;
+    let repeat = 1, raf = 0, lastShown = -1;
+    const gravMilli = 9805 + Math.floor(Math.random() * 11);
+    const gravity = gravMilli / 1000;
+
+    for (let cm=0; cm<=100; cm+=2) {
+      const y = ruler.yBottom - cm*ruler.pxPerCm;
+      const major = cm%10===0;
+      const line = document.createElementNS(NS,"line");
+      line.setAttribute("x1",String(ruler.x)); line.setAttribute("x2",String(ruler.x-(major?22:11)));
+      line.setAttribute("y1",String(y)); line.setAttribute("y2",String(y));
+      line.setAttribute("stroke",major?"#486272":"#9aabb4"); line.setAttribute("stroke-width",major?"1.7":"1");
+      $("ticks").appendChild(line);
+      if (major) {
+        const text = document.createElementNS(NS,"text");
+        text.setAttribute("x","78"); text.setAttribute("y",String(y+4)); text.setAttribute("text-anchor","end");
+        text.setAttribute("fill","#526879"); text.setAttribute("font-size","12"); text.textContent=String(cm);
+        $("ruler-labels").appendChild(text);
+      }
+    }
+    for (let h=40; h<=100; h+=2) {
+      const opt=document.createElement("option"); opt.value=String(h); opt.textContent=String(h);
+      if(h===40) opt.selected=true; heightSelect.appendChild(opt);
+    }
+
+    function params(){
+      const M=Math.max(50,Math.min(1000,Number(massM.value)||200));
+      const m=Number(overload.value);
+      const H=mode.value==="mass"?50:Number(heightSelect.value);
+      return {M,m,H};
+    }
+    function yAt(cm){ return ruler.yBottom-cm*ruler.pxPerCm; }
+    function updateDrawing(){
+      const {H}=params();
+      const leftCm=(100-H)+H*progress;
+      const rightCm=H*(1-progress);
+      const leftY=yAt(leftCm)-massHeight;
+      const rightY=yAt(rightCm)-massHeight;
+      $("left-body").setAttribute("y",String(leftY));
+      $("right-body").setAttribute("y",String(rightY));
+      $("left-accent").setAttribute("y",String(leftY+4));
+      $("right-accent").setAttribute("y",String(rightY+4));
+      $("left-label").setAttribute("y",String(leftY+30));
+      $("right-label").setAttribute("y",String(rightY+30));
+      const ropePath=`M293 ${leftY} L293 55 C293 11 373 11 373 55 L373 ${rightY}`;
+      $("rope-path").setAttribute("d",ropePath);
+      const y1=yAt(0), y2=yAt(H);
+      $("h1-mark").setAttribute("y1",y1); $("h1-mark").setAttribute("y2",y1);
+      $("h1-label").setAttribute("y",String(y1-7));
+      $("h2-mark").setAttribute("y1",y2); $("h2-mark").setAttribute("y2",y2);
+      $("h2-label").setAttribute("y",String(y2-7));
+      $("gate").setAttribute("y1",y1); $("gate").setAttribute("y2",y1);
+      $("gate-label").setAttribute("y",String(y1-8));
+      $("chip-M").textContent=`M = ${Math.round(Number(massM.value)||200)} г`;
+      $("chip-m").textContent=`m = ${params().m} г`;
+      $("chip-H").textContent=`H = ${H} см`;
+    }
+    function setState(kind,label){ status.dataset.state=kind; status.textContent=label; }
+    function showTime(){ timer.textContent=(elapsed/1000).toFixed(3); }
+    function stopAnimation(){ if(raf) cancelAnimationFrame(raf); raf=0; }
+    function resetRun({keepRepeat=true}={}){
+      stopAnimation(); progress=0; timerOn=false; elapsed=0; startedAt=0; lastShown=-1;
+      toggle.textContent="ВКЛ"; toggle.classList.remove("stop"); toggle.disabled=false; reset.disabled=false; next.disabled=false;
+      if(!keepRepeat) repeat=1;
+      setState("ready","Готово");
+      message.textContent="Нажмите «ВКЛ», чтобы начать движение и отсчёт времени.";
+      repeatTitle.textContent=`Повтор: ${repeat} из 3`;
+      dots.forEach((dot,i)=>dot.classList.toggle("active",i<repeat));
+      showTime(); updateDrawing();
+    }
+    function setControlsLocked(locked){
+      mode.disabled=locked; massM.disabled=locked; overload.disabled=locked;
+      heightSelect.disabled=locked||mode.value==="mass";
+    }
+    function updateMode(){
+      const massMode=mode.value==="mass";
+      $("height-field").hidden=massMode; $("fixed-height-field").hidden=!massMode;
+      $("height-hint").textContent=massMode?"":"Выберите высоту от 40 до 100 см.";
+      resetRun({keepRepeat:false}); updateHeightOptions();
+    }
+    function updateHeightOptions(){
+      const H=Number(heightSelect.value)||40;
+      heightSelect.innerHTML="";
+      for(let cm=40;cm<=100;cm+=2){const o=document.createElement("option");o.value=String(cm);o.textContent=String(cm);if(cm===H)o.selected=true;heightSelect.appendChild(o)}
+      if(mode.value==="mass") heightSelect.value="50";
+      updateDrawing();
+    }
+    function start(){
+      if(timerOn){
+        elapsed=performance.now()-startedAt; timerOn=false;
+        toggle.textContent="Остановлен"; toggle.classList.remove("stop"); toggle.disabled=true;
+        setControlsLocked(false); setState("done","Измерение остановлено");
+        message.textContent=`Запишите показание ${ (elapsed/1000).toFixed(3) } с в отчёт. Данные автоматически не сохраняются.`;
+        return;
+      }
+      if(progress>=1) { message.textContent="Нажмите «Сброс», чтобы повторить запуск."; return; }
+      startedAt=performance.now()-elapsed; timerOn=true; frame=performance.now();
+      toggle.textContent="ВЫКЛ"; toggle.classList.add("stop");
+      setControlsLocked(true); setState("running","Движение");
+      message.textContent="Следите за нижним краем правого груза и остановите секундомер у h₁.";
+      const {M,m,H}=params();
+      const a=gravity*(m/1000)/(2*(M/1000)+m/1000);
+      const duration=Math.sqrt(2*(H/100)/a)*1000;
+      const step=(now)=>{
+        if(timerOn){
+          elapsed=now-startedAt;
+          const shown=Math.floor(elapsed/20);
+          if(shown!==lastShown){showTime();lastShown=shown}
+        }
+        const timeFraction=Math.max(0,(now-startedAt)/duration);
+        progress=Math.min(1,timeFraction*timeFraction);
+        updateDrawing();
+        if(progress>=1 && timerOn){
+          setState("done","Грузы у отметках");
+          message.textContent="Правый груз достиг h₁. Остановите секундомер кнопкой «ВЫКЛ» и запишите время.";
+        }
+        if(progress>=1 && !timerOn){stopAnimation();return;}
+        raf=requestAnimationFrame(step);
+      };
+      raf=requestAnimationFrame(step);
+    }
+    mode.addEventListener("change",updateMode);
+    for(const control of [massM,overload,heightSelect]) control.addEventListener("change",()=>{if(control===massM){const v=Math.max(50,Math.min(1000,Number(massM.value)||200));massM.value=String(Math.round(v/10)*10)}resetRun({keepRepeat:false})});
+    toggle.addEventListener("click",start);
+    reset.addEventListener("click",()=>resetRun({keepRepeat:false}));
+    next.addEventListener("click",()=>{
+      if(timerOn){message.textContent="Сначала остановите секундомер кнопкой «ВЫКЛ».";return}
+      if(repeat<3){repeat+=1;resetRun({keepRepeat:true});}
+      else {repeat=1;resetRun({keepRepeat:true});message.textContent="Три повтора выполнены. Измените H или m для следующего условия и перенесите результаты в отчёт.";}
+    });
+    updateDrawing(); showTime();
+  })();
+  </script>
+</body>
+</html>
