@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ЭДС и внутреннее сопротивление — физический практикум</title>
+<style>
+:root {
+  color-scheme: light;
+  --ink: #102b43; --muted: #526879; --paper: #f4f7f8; --line: #d6e0e5;
+  --teal: #087e83; --amber: #e89b2d;
+  font-family: system-ui, "Segoe UI", sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; color: var(--ink); background: var(--paper); line-height: 1.5; }
+main { width: min(1160px, 100% - 32px); margin: 24px auto 36px; }
+header { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin-bottom: 18px; }
+.kicker { color: var(--teal); font-weight: 700; font-size: .9rem; margin: 0 0 3px; }
+h1 { font-size: clamp(1.35rem, 3vw, 2rem); line-height: 1.15; margin: 0; }
+h2 { font-size: 1.12rem; margin: 0 0 8px; }
+header a { color: var(--teal); font-weight: 700; white-space: nowrap; }
+.layout { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(295px, 1fr); gap: 16px; align-items: start; }
+.card { background: white; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 12px 32px #102b4310; overflow: hidden; min-width: 0; }
+.intro, .panel { padding: 16px 19px; }
+.intro h2 { margin-bottom: 3px; }
+.muted { color: var(--muted); margin: 0; font-size: .91rem; }
+.diagram { background: #eef4f6; border-block: 1px solid var(--line); }
+canvas { display: block; width: 100%; aspect-ratio: 16 / 9; }
+.instruments { display: flex; flex-wrap: wrap; gap: 10px; padding: 14px 18px 4px; }
+.meter { flex: 1 1 125px; background: #eef5f7; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+.meter span { display: block; color: var(--muted); font-size: .8rem; }
+.meter output { display: block; font-variant-numeric: tabular-nums; font-size: clamp(1rem, 4vw, 1.65rem); font-weight: 750; }
+.actions, .range-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.actions { padding: 13px 18px 16px; }
+button, select, input { font: inherit; }
+button { min-height: 42px; border: 0; border-radius: 9px; padding: 8px 12px; font-weight: 700; cursor: pointer; background: #eaf0f3; color: var(--ink); }
+button.primary { background: var(--teal); color: white; }
+button:disabled, select:disabled, input:disabled { opacity: .54; cursor: default; }
+:focus-visible { outline: 3px solid #087e83; outline-offset: 3px; }
+.field { display: grid; gap: 5px; margin: 12px 0; }
+label { font-size: .91rem; font-weight: 650; }
+select { color: var(--ink); padding: 7px 9px; min-height: 42px; background: white; border: 1px solid #b7c7cf; border-radius: 9px; width: 100%; }
+input[type=range] { accent-color: var(--teal); margin-inline: 0; width: 100%; min-height: 25px; }
+input[type=checkbox] { accent-color: var(--teal); width: 18px; height: 18px; vertical-align: middle; }
+.status { background: #e4f5f2; border-radius: 9px; padding: 10px; min-height: 64px; margin: 15px 0 0; font-size: .9rem; }
+.guide { margin-top: 16px; }
+summary { padding: 13px 19px; cursor: pointer; font-weight: 700; }
+details ol { margin: 0; padding: 0 20px 14px 39px; }
+details li + li { margin-top: 4px; }
+@media (max-width: 780px) { .layout { grid-template-columns: 1fr; } }
+@media (max-width: 450px) { main { width: calc(100% - 20px); margin-top: 14px; } header { align-items: flex-start; } .intro, .panel { padding-inline: 13px; } }
+</style>
+</head>
+<body>
+<main>
+<header><div><p class="kicker">Электродинамика · № 11</p><h1>ЭДС и внутреннее сопротивление</h1></div><a href="emf_method.pdf" target="_blank" rel="noopener">Методика · PDF</a></header>
+<div class="layout">
+<section class="card" aria-label="Экспериментальная установка">
+<div class="intro"><h2>Установка</h2><p class="muted">Амперметр подключён последовательно с нагрузкой, вольтметр — к зажимам источника.</p></div>
+<div class="diagram"><canvas id="diagram" width="1200" height="675" role="img" aria-label="Источник, амперметр, вольтметр, ключ и нагрузочное сопротивление"></canvas></div>
+<div class="instruments"><div class="meter"><span id="label-current">Амперметр</span><output id="current" aria-labelledby="label-current" aria-live="off">—</output></div><div class="meter"><span id="label-voltage">Вольтметр</span><output id="voltage" aria-labelledby="label-voltage" aria-live="off">—</output></div></div>
+<div class="actions"><button type="button" id="sample" class="primary">Повторить отсчёт</button><button type="button" id="reset">Сброс</button></div>
+</section>
+<section class="card panel"><h2>Условия опыта</h2><div class="field"><label><input type="checkbox" id="closed"> Замкнуть ключ</label></div><div class="field"><label for="resistance">Сопротивление нагрузки R</label><select id="resistance"><option value="4">4 Ом</option><option value="6">6 Ом</option><option value="8">8 Ом</option><option value="10" selected>10 Ом</option><option value="15">15 Ом</option><option value="22">22 Ом</option><option value="33">33 Ом</option><option value="47">47 Ом</option></select></div><p id="status" class="status" role="status"></p></section>
+</div>
+<details class="card guide"><summary>Порядок измерений</summary><ol><li>Снимите напряжение при разомкнутой цепи.</li><li>Замкните ключ. Меняйте нагрузку и снимайте пары показаний I и U.</li><li>Постройте график U(I). Используйте его наклон и пересечение с осью U.</li></ol></details>
+</main>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const canvas = $("diagram");
+const ctx = canvas.getContext("2d");
+ctx.scale(2, 2);
+const ink = "#102b43";
+const muted = "#526879";
+const metal = "#547084";
+const teal = "#087e83";
+const amber = "#de841c";
+const red = "#b3433a";
+
+function value(id) {
+  return Number($(id).value);
+}
+
+function reading(id, number, decimals, unit) {
+  $(id).textContent = number.toFixed(decimals).replace(".", ",") + " " + unit;
+}
+
+function clearReading(id) {
+  $(id).textContent = "—";
+}
+
+function status(message) {
+  if ($("status").textContent !== message) $("status").textContent = message;
+}
+
+function variation(magnitude) {
+  return magnitude * (2 * Math.random() - 1);
+}
+
+function line(points, color = metal, width = 3, dash = []) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.setLineDash(dash);
+  ctx.beginPath();
+  ctx.moveTo(...points[0]);
+  for (const point of points.slice(1)) ctx.lineTo(...point);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function arrow(from, to, color = teal) {
+  const angle = Math.atan2(to[1] - from[1], to[0] - from[0]);
+  const head = (offset) => [to[0] - 10 * Math.cos(angle + offset), to[1] - 10 * Math.sin(angle + offset)];
+  line([from, to], color);
+  line([head(-0.6), to, head(0.6)], color);
+}
+
+function box(x, y, width, height, fill, stroke = metal, radius = 8) {
+  ctx.fillStyle = fill;
+  ctx.strokeStyle = stroke;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(x, y, width, height, radius);
+  ctx.fill();
+  ctx.stroke();
+}
+
+function circle(x, y, radius, fill, stroke = metal) {
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, 2 * Math.PI);
+  ctx.fillStyle = fill;
+  ctx.strokeStyle = stroke;
+  ctx.lineWidth = 2;
+  ctx.fill();
+  ctx.stroke();
+}
+
+function label(text, x, y, options = {}) {
+  const {color = ink, size = 18, align = "center", bold = false} = options;
+  ctx.font = `${bold ? "700 " : ""}${size}px system-ui, sans-serif`;
+  ctx.fillStyle = color;
+  ctx.textAlign = align;
+  ctx.fillText(text, x, y);
+}
+
+function background() {
+  ctx.clearRect(0, 0, 600, 338);
+  ctx.fillStyle = "#eef4f6";
+  ctx.fillRect(0, 0, 600, 338);
+}
+
+function selectOptions(id, handler) {
+  $(id).addEventListener("change", handler);
+}
+
+const emf = 4.5 + variation(0.12);
+const internalResistance = 1.35 + variation(0.15);
+const voltmeterZero = variation(0.002);
+
+function draw(closed) {
+  background();
+  line([[103, 240], [103, 79], [233, 79]], metal, 4);
+  line([[282, 79], [396, 79], [461, 79], [461, 240], [340, 240]], metal, 4);
+  line([[243, 240], [103, 240]], metal, 4);
+  line([[103, 240], [103, 286], [253, 286]]);
+  line([[309, 286], [461, 286], [461, 240]]);
+  line([[113, 79], [176, 79]], metal, 4);
+  box(113, 64, 63, 30, "#ffe5b7", "#98580b", 2);
+  label("R", 144, 85, {bold: true, size: 17});
+  label("Нагрузка", 145, 46, {size: 16});
+  line([[233, 79], [closed ? 282 : 277, closed ? 79 : 57]], ink, 3);
+  circle(233, 79, 4, ink, ink);
+  circle(282, 79, 4, ink, ink);
+  label("Ключ", 257, 126, {size: 16});
+  circle(396, 79, 25, "#fff", teal);
+  label("A", 396, 86, {bold: true});
+  circle(281, 286, 26, "#fff", teal);
+  label("V", 281, 293, {bold: true});
+  box(242, 206, 100, 54, "#ffffff", ink);
+  line([[242, 240], [270, 240]], ink);
+  line([[270, 223], [270, 251]], ink);
+  line([[281, 229], [281, 247]], ink);
+  line([[281, 240], [340, 240]], ink);
+  label("+", 258, 229, {size: 14});
+  label("Источник", 291, 189, {bold: true, size: 17});
+  circle(103, 240, 4, ink, ink);
+  circle(461, 240, 4, ink, ink);
+  if (closed) arrow([317, 115], [363, 115], teal);
+}
+
+function update() {
+  const closed = $("closed").checked;
+  const current = closed ? emf / (value("resistance") + internalResistance) : 0;
+  reading("current", current === 0 ? 0 : current + variation(0.0014), 3, "А");
+  reading("voltage", emf - current * internalResistance + voltmeterZero + variation(0.0035), 2, "В");
+  status(closed ? "Цепь замкнута. Снимите показания амперметра и вольтметра." :
+    "Цепь разомкнута. Вольтметр измеряет напряжение холостого хода.");
+  draw(closed);
+}
+
+$("closed").addEventListener("change", update);
+selectOptions("resistance", update);
+$("sample").addEventListener("click", update);
+$("reset").addEventListener("click", () => {
+  $("closed").checked = false;
+  $("resistance").value = "10";
+  update();
+});
+$("reset").click();
+
+</script>
+</body>
+</html>

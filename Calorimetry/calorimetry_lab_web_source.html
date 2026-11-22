@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Плавление льда — физический практикум</title>
+<style>
+:root {
+  color-scheme: light;
+  --ink: #102b43; --muted: #526879; --paper: #f4f7f8; --line: #d6e0e5;
+  --teal: #087e83; --amber: #e89b2d;
+  font-family: system-ui, "Segoe UI", sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; color: var(--ink); background: var(--paper); line-height: 1.5; }
+main { width: min(1160px, 100% - 32px); margin: 24px auto 36px; }
+header { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin-bottom: 18px; }
+.kicker { color: var(--teal); font-weight: 700; font-size: .9rem; margin: 0 0 3px; }
+h1 { font-size: clamp(1.35rem, 3vw, 2rem); line-height: 1.15; margin: 0; }
+h2 { font-size: 1.12rem; margin: 0 0 8px; }
+header a { color: var(--teal); font-weight: 700; white-space: nowrap; }
+.layout { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(295px, 1fr); gap: 16px; align-items: start; }
+.card { background: white; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 12px 32px #102b4310; overflow: hidden; min-width: 0; }
+.intro, .panel { padding: 16px 19px; }
+.intro h2 { margin-bottom: 3px; }
+.muted { color: var(--muted); margin: 0; font-size: .91rem; }
+.diagram { background: #eef4f6; border-block: 1px solid var(--line); }
+canvas { display: block; width: 100%; aspect-ratio: 16 / 9; }
+.instruments { display: flex; flex-wrap: wrap; gap: 10px; padding: 14px 18px 4px; }
+.meter { flex: 1 1 125px; background: #eef5f7; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+.meter span { display: block; color: var(--muted); font-size: .8rem; }
+.meter output { display: block; font-variant-numeric: tabular-nums; font-size: clamp(1rem, 4vw, 1.65rem); font-weight: 750; }
+.actions, .range-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.actions { padding: 13px 18px 16px; }
+button, select, input { font: inherit; }
+button { min-height: 42px; border: 0; border-radius: 9px; padding: 8px 12px; font-weight: 700; cursor: pointer; background: #eaf0f3; color: var(--ink); }
+button.primary { background: var(--teal); color: white; }
+button:disabled, select:disabled, input:disabled { opacity: .54; cursor: default; }
+:focus-visible { outline: 3px solid #087e83; outline-offset: 3px; }
+.field { display: grid; gap: 5px; margin: 12px 0; }
+label { font-size: .91rem; font-weight: 650; }
+select { color: var(--ink); padding: 7px 9px; min-height: 42px; background: white; border: 1px solid #b7c7cf; border-radius: 9px; width: 100%; }
+input[type=range] { accent-color: var(--teal); margin-inline: 0; width: 100%; min-height: 25px; }
+input[type=checkbox] { accent-color: var(--teal); width: 18px; height: 18px; vertical-align: middle; }
+.status { background: #e4f5f2; border-radius: 9px; padding: 10px; min-height: 64px; margin: 15px 0 0; font-size: .9rem; }
+.guide { margin-top: 16px; }
+summary { padding: 13px 19px; cursor: pointer; font-weight: 700; }
+details ol { margin: 0; padding: 0 20px 14px 39px; }
+details li + li { margin-top: 4px; }
+@media (max-width: 780px) { .layout { grid-template-columns: 1fr; } }
+@media (max-width: 450px) { main { width: calc(100% - 20px); margin-top: 14px; } header { align-items: flex-start; } .intro, .panel { padding-inline: 13px; } }
+</style>
+</head>
+<body>
+<main>
+<header><div><p class="kicker">Молекулярная физика · № 8</p><h1>Плавление льда</h1></div><a href="calorimetry_method.pdf" target="_blank" rel="noopener">Методика · PDF</a></header>
+<div class="layout">
+<section class="card" aria-label="Экспериментальная установка">
+<div class="intro"><h2>Установка</h2><p class="muted">Вода и калориметр имеют одну начальную температуру. Температура льда перед смешиванием равна 0 °C.</p></div>
+<div class="diagram"><canvas id="diagram" width="1200" height="675" role="img" aria-label="Калориметр с водой, термометр и порция льда"></canvas></div>
+<div class="instruments"><div class="meter"><span id="label-read-water">Масса воды</span><output id="read-water" aria-labelledby="label-read-water" aria-live="off">—</output></div><div class="meter"><span id="label-read-ice">Масса льда</span><output id="read-ice" aria-labelledby="label-read-ice" aria-live="off">—</output></div><div class="meter"><span id="label-read-temperature">Термометр</span><output id="read-temperature" aria-labelledby="label-read-temperature" aria-live="off">—</output></div></div>
+<div class="actions"><button type="button" id="mix" class="primary">Добавить лёд</button><button type="button" id="reset">Новая проба</button></div>
+</section>
+<section class="card panel"><h2>Условия опыта</h2><div class="field"><label for="water">Масса воды</label><select id="water"><option value="150">150 г</option><option value="175">175 г</option><option value="200" selected>200 г</option><option value="225">225 г</option><option value="250">250 г</option></select></div><div class="field"><label for="ice">Масса льда</label><select id="ice"><option value="20">20 г</option><option value="25">25 г</option><option value="30" selected>30 г</option><option value="35">35 г</option><option value="40">40 г</option><option value="45">45 г</option><option value="50">50 г</option></select></div><div class="field"><label for="temperature">Начальная температура воды</label><select id="temperature"><option value="35">35 °C</option><option value="40" selected>40 °C</option><option value="45">45 °C</option><option value="50">50 °C</option><option value="55">55 °C</option></select></div><p id="status" class="status" role="status"></p></section>
+</div>
+<details class="card guide"><summary>Порядок измерений</summary><ol><li>Перепишите массы воды и льда и начальную температуру.</li><li>Добавьте лёд и дождитесь окончания таяния. Снимите конечную температуру.</li><li>Повторите измерения с другими порциями льда. Теплоёмкость калориметра равна 32 Дж/К.</li></ol></details>
+</main>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const canvas = $("diagram");
+const ctx = canvas.getContext("2d");
+ctx.scale(2, 2);
+const ink = "#102b43";
+const muted = "#526879";
+const metal = "#547084";
+const teal = "#087e83";
+const amber = "#de841c";
+const red = "#b3433a";
+
+function value(id) {
+  return Number($(id).value);
+}
+
+function reading(id, number, decimals, unit) {
+  $(id).textContent = number.toFixed(decimals).replace(".", ",") + " " + unit;
+}
+
+function clearReading(id) {
+  $(id).textContent = "—";
+}
+
+function status(message) {
+  if ($("status").textContent !== message) $("status").textContent = message;
+}
+
+function variation(magnitude) {
+  return magnitude * (2 * Math.random() - 1);
+}
+
+function line(points, color = metal, width = 3, dash = []) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.setLineDash(dash);
+  ctx.beginPath();
+  ctx.moveTo(...points[0]);
+  for (const point of points.slice(1)) ctx.lineTo(...point);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function arrow(from, to, color = teal) {
+  const angle = Math.atan2(to[1] - from[1], to[0] - from[0]);
+  const head = (offset) => [to[0] - 10 * Math.cos(angle + offset), to[1] - 10 * Math.sin(angle + offset)];
+  line([from, to], color);
+  line([head(-0.6), to, head(0.6)], color);
+}
+
+function box(x, y, width, height, fill, stroke = metal, radius = 8) {
+  ctx.fillStyle = fill;
+  ctx.strokeStyle = stroke;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(x, y, width, height, radius);
+  ctx.fill();
+  ctx.stroke();
+}
+
+function circle(x, y, radius, fill, stroke = metal) {
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, 2 * Math.PI);
+  ctx.fillStyle = fill;
+  ctx.strokeStyle = stroke;
+  ctx.lineWidth = 2;
+  ctx.fill();
+  ctx.stroke();
+}
+
+function label(text, x, y, options = {}) {
+  const {color = ink, size = 18, align = "center", bold = false} = options;
+  ctx.font = `${bold ? "700 " : ""}${size}px system-ui, sans-serif`;
+  ctx.fillStyle = color;
+  ctx.textAlign = align;
+  ctx.fillText(text, x, y);
+}
+
+function background() {
+  ctx.clearRect(0, 0, 600, 338);
+  ctx.fillStyle = "#eef4f6";
+  ctx.fillRect(0, 0, 600, 338);
+}
+
+function selectOptions(id, handler) {
+  $(id).addEventListener("change", handler);
+}
+
+const waterHeat = 4180;
+const calorimeterHeat = 32;
+const latentHeat = 334000 + variation(1200);
+let startTime = null;
+let frame = 0;
+
+function equilibrium() {
+  const water = value("water") / 1000;
+  const ice = value("ice") / 1000;
+  return ((water * waterHeat + calorimeterHeat) * value("temperature") - ice * latentHeat) /
+    ((water + ice) * waterHeat + calorimeterHeat);
+}
+
+function draw(progress = 0) {
+  background();
+  const waterTop = 190 - (value("water") - 150) * 0.24;
+  const level = waterTop - (value("ice") * progress) * 0.28;
+  box(178, 102, 241, 181, "#dce5e9", metal, 19);
+  box(192, 107, 213, 162, "#fff", ink, 10);
+  box(199, level, 199, 260 - level, "#a9dce1", teal);
+  box(167, 96, 260, 19, "#86a0af", metal, 5);
+  line([[364, 58], [364, 233]], red, 5);
+  circle(364, 232, 7, "#e98573", red);
+  if (progress < 0.98 && startTime !== null) {
+    for (let index = 0; index < 3; index += 1) {
+      const size = (0.25 + value("ice") / 100) * 36 * Math.sqrt(1 - progress);
+      box(224 + index * 44, level - size * 0.65, size, size, "#d5f1ff", "#557ca1", 4);
+    }
+  } else if (progress === 0) {
+    box(64, 177, 59, 42, "#d5f1ff", "#557ca1", 6);
+    label("Лёд, 0 °C", 93, 247, {size: 16});
+    arrow([126, 190], [182, 159]);
+  }
+  line([[370, 68], [461, 68]], red, 2);
+  label("Термометр", 469, 73, {align: "left", size: 16});
+  label("Калориметр", 298, 309, {bold: true});
+}
+
+function initialReadings() {
+  reading("read-water", value("water"), 1, "г");
+  reading("read-ice", value("ice"), 1, "г");
+  reading("read-temperature", value("temperature"), 1, "°C");
+  draw();
+}
+
+function animate(now, measuredFinal) {
+  const time = (now - startTime) / 1000;
+  const progress = Math.min(1, time / 7);
+  const fraction = (1 - Math.exp(-4.5 * progress)) / (1 - Math.exp(-4.5));
+  const temperature = value("temperature") + (measuredFinal - value("temperature")) * fraction;
+  reading("read-temperature", temperature, 1, "°C");
+  draw(progress);
+  if (progress < 1) {
+    frame = requestAnimationFrame((stamp) => animate(stamp, measuredFinal));
+  } else {
+    startTime = null;
+    status("Лёд растаял. Запишите установившуюся температуру. «Новая проба» подготовит чистый калориметр.");
+  }
+}
+
+function lock(locked) {
+  for (const id of ["water", "ice", "temperature", "mix"]) $(id).disabled = locked;
+}
+
+$("mix").addEventListener("click", () => {
+  lock(true);
+  status("Идёт перемешивание. Дождитесь полного таяния льда и установления температуры.");
+  startTime = performance.now();
+  const measuredFinal = equilibrium() + variation(0.075);
+  frame = requestAnimationFrame((stamp) => animate(stamp, measuredFinal));
+});
+
+$("reset").addEventListener("click", () => {
+  cancelAnimationFrame(frame);
+  startTime = null;
+  lock(false);
+  status("Запишите обе массы и начальную температуру. Затем добавьте лёд.");
+  initialReadings();
+});
+
+for (const id of ["water", "ice", "temperature"]) selectOptions(id, initialReadings);
+$("reset").click();
+
+</script>
+</body>
+</html>

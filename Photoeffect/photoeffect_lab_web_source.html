@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Внешний фотоэффект — физический практикум</title>
+<style>
+:root {
+  color-scheme: light;
+  --ink: #102b43; --muted: #526879; --paper: #f4f7f8; --line: #d6e0e5;
+  --teal: #087e83; --amber: #e89b2d;
+  font-family: system-ui, "Segoe UI", sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; color: var(--ink); background: var(--paper); line-height: 1.5; }
+main { width: min(1160px, 100% - 32px); margin: 24px auto 36px; }
+header { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin-bottom: 18px; }
+.kicker { color: var(--teal); font-weight: 700; font-size: .9rem; margin: 0 0 3px; }
+h1 { font-size: clamp(1.35rem, 3vw, 2rem); line-height: 1.15; margin: 0; }
+h2 { font-size: 1.12rem; margin: 0 0 8px; }
+header a { color: var(--teal); font-weight: 700; white-space: nowrap; }
+.layout { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(295px, 1fr); gap: 16px; align-items: start; }
+.card { background: white; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 12px 32px #102b4310; overflow: hidden; min-width: 0; }
+.intro, .panel { padding: 16px 19px; }
+.intro h2 { margin-bottom: 3px; }
+.muted { color: var(--muted); margin: 0; font-size: .91rem; }
+.diagram { background: #eef4f6; border-block: 1px solid var(--line); }
+canvas { display: block; width: 100%; aspect-ratio: 16 / 9; }
+.instruments { display: flex; flex-wrap: wrap; gap: 10px; padding: 14px 18px 4px; }
+.meter { flex: 1 1 125px; background: #eef5f7; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+.meter span { display: block; color: var(--muted); font-size: .8rem; }
+.meter output { display: block; font-variant-numeric: tabular-nums; font-size: clamp(1rem, 4vw, 1.65rem); font-weight: 750; }
+.actions, .range-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.actions { padding: 13px 18px 16px; }
+button, select, input { font: inherit; }
+button { min-height: 42px; border: 0; border-radius: 9px; padding: 8px 12px; font-weight: 700; cursor: pointer; background: #eaf0f3; color: var(--ink); }
+button.primary { background: var(--teal); color: white; }
+button:disabled, select:disabled, input:disabled { opacity: .54; cursor: default; }
+:focus-visible { outline: 3px solid #087e83; outline-offset: 3px; }
+.field { display: grid; gap: 5px; margin: 12px 0; }
+label { font-size: .91rem; font-weight: 650; }
+select { color: var(--ink); padding: 7px 9px; min-height: 42px; background: white; border: 1px solid #b7c7cf; border-radius: 9px; width: 100%; }
+input[type=range] { accent-color: var(--teal); margin-inline: 0; width: 100%; min-height: 25px; }
+input[type=checkbox] { accent-color: var(--teal); width: 18px; height: 18px; vertical-align: middle; }
+.status { background: #e4f5f2; border-radius: 9px; padding: 10px; min-height: 64px; margin: 15px 0 0; font-size: .9rem; }
+.guide { margin-top: 16px; }
+summary { padding: 13px 19px; cursor: pointer; font-weight: 700; }
+details ol { margin: 0; padding: 0 20px 14px 39px; }
+details li + li { margin-top: 4px; }
+@media (max-width: 780px) { .layout { grid-template-columns: 1fr; } }
+@media (max-width: 450px) { main { width: calc(100% - 20px); margin-top: 14px; } header { align-items: flex-start; } .intro, .panel { padding-inline: 13px; } }
+</style>
+</head>
+<body>
+<main>
+<header><div><p class="kicker">Квантовая физика</p><h1>Внешний фотоэффект</h1></div><a href="photoeffect_method.pdf" target="_blank" rel="noopener">Методика · PDF</a></header>
+<div class="layout">
+<section class="card" aria-label="Экспериментальная установка">
+<div class="intro"><h2>Установка</h2><p class="muted">Меняйте длину волны и напряжение на вакуумном фотоэлементе. Сравнивайте ток при открытом и закрытом затворе.</p></div>
+<div class="diagram"><canvas id="diagram" width="1200" height="675" role="img" aria-label="Источник света с затвором, фотокатод и анод в вакуумной трубке, микроамперметр и регулируемый источник напряжения"></canvas></div>
+<div class="instruments"><div class="meter"><span id="label-voltage">Напряжение анод − катод</span><output id="voltage" aria-labelledby="label-voltage" aria-live="off">—</output></div><div class="meter"><span id="label-photocurrent">Микроамперметр</span><output id="photocurrent" aria-labelledby="label-photocurrent" aria-live="off">—</output></div></div>
+<div class="actions"><button type="button" id="sample" class="primary">Повторить отсчёт</button><button type="button" id="reset">Сброс</button></div>
+</section>
+<section class="card panel"><h2>Условия опыта</h2><div class="field"><label for="wavelength">Длина волны λ</label><select id="wavelength"><option value="365">365 нм</option><option value="405">405 нм</option><option value="436" selected>436 нм</option><option value="470">470 нм</option><option value="505">505 нм</option><option value="546">546 нм</option><option value="570">570 нм</option><option value="580">580 нм</option><option value="590">590 нм</option><option value="600">600 нм</option><option value="610">610 нм</option><option value="620">620 нм</option><option value="660">660 нм</option></select></div><div class="field"><label for="intensity">Относительная интенсивность</label><select id="intensity"><option value="25">25 %</option><option value="50">50 %</option><option value="75">75 %</option><option value="100" selected>100 %</option></select></div><div class="field"><label><input type="checkbox" id="light"> Открыть затвор</label></div><div class="field">
+<label for="bias">Напряжение U, от −1,60 до +0,50 В</label>
+<input id="bias" type="range" min="-160" max="50" step="1" value="0">
+<div class="range-actions"><button type="button" id="minus">−0,01 В</button><button type="button" id="plus">+0,01 В</button></div></div><p id="status" class="status" role="status"></p></section>
+</div>
+<details class="card guide"><summary>Порядок измерений</summary><ol><li>При U = +0,20 В сравните ток в темноте и на свету для разных длин волн.</li><li>Для 365–546 нм подберите отрицательное напряжение, при котором разность токов исчезает.</li><li>Найдите красную границу по интервалу длин волн и по пересечению прямой Uз(ν) с осью частоты.</li></ol></details>
+</main>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const canvas = $("diagram");
+const ctx = canvas.getContext("2d");
+ctx.scale(2, 2);
+const ink = "#102b43";
+const muted = "#526879";
+const metal = "#547084";
+const teal = "#087e83";
+const amber = "#de841c";
+const red = "#b3433a";
+
+function value(id) {
+  return Number($(id).value);
+}
+
+function reading(id, number, decimals, unit) {
+  $(id).textContent = number.toFixed(decimals).replace(".", ",") + " " + unit;
+}
+
+function clearReading(id) {
+  $(id).textContent = "—";
+}
+
+function status(message) {
+  if ($("status").textContent !== message) $("status").textContent = message;
+}
+
+function variation(magnitude) {
+  return magnitude * (2 * Math.random() - 1);
+}
+
+function line(points, color = metal, width = 3, dash = []) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.setLineDash(dash);
+  ctx.beginPath();
+  ctx.moveTo(...points[0]);
+  for (const point of points.slice(1)) ctx.lineTo(...point);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function arrow(from, to, color = teal) {
+  const angle = Math.atan2(to[1] - from[1], to[0] - from[0]);
+  const head = (offset) => [to[0] - 10 * Math.cos(angle + offset), to[1] - 10 * Math.sin(angle + offset)];
+  line([from, to], color);
+  line([head(-0.6), to, head(0.6)], color);
+}
+
+function box(x, y, width, height, fill, stroke = metal, radius = 8) {
+  ctx.fillStyle = fill;
+  ctx.strokeStyle = stroke;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(x, y, width, height, radius);
+  ctx.fill();
+  ctx.stroke();
+}
+
+function circle(x, y, radius, fill, stroke = metal) {
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, 2 * Math.PI);
+  ctx.fillStyle = fill;
+  ctx.strokeStyle = stroke;
+  ctx.lineWidth = 2;
+  ctx.fill();
+  ctx.stroke();
+}
+
+function label(text, x, y, options = {}) {
+  const {color = ink, size = 18, align = "center", bold = false} = options;
+  ctx.font = `${bold ? "700 " : ""}${size}px system-ui, sans-serif`;
+  ctx.fillStyle = color;
+  ctx.textAlign = align;
+  ctx.fillText(text, x, y);
+}
+
+function background() {
+  ctx.clearRect(0, 0, 600, 338);
+  ctx.fillStyle = "#eef4f6";
+  ctx.fillRect(0, 0, 600, 338);
+}
+
+function selectOptions(id, handler) {
+  $(id).addEventListener("change", handler);
+}
+
+const hcOverE = 1239.841984; // В·нм
+const workFunction = 2.08 + variation(0.035); // эВ
+const darkCurrent = 0.042 + variation(0.005); // мкА
+const colors = new Map([[365,"#744ab6"],[405,"#6d51cc"],[436,"#504ed5"],[470,"#237fca"],
+  [505,"#14847b"],[546,"#33804c"],[570,"#a47507"],[580,"#ae6e11"],[590,"#b06518"],
+  [600,"#b95527"],[610,"#b9452d"],[620,"#ad3430"],[660,"#a62f32"]]);
+
+function draw(wavelength, open, voltage) {
+  background();
+  const beam = colors.get(wavelength);
+  box(42, 134, 97, 60, "#fff", metal);
+  circle(115, 164, 12, open ? beam : "#c0ced4", metal);
+  label("Источник света", 110, 119, {bold: true, size: 17});
+  label(`${wavelength} нм`, 92, 220, {size: 16, color: muted});
+  box(206, 86, 221, 147, "#fff", metal, 47);
+  line([[236, 133], [247, 153], [247, 172], [237, 187]], ink, 5);
+  line([[387, 127], [387, 190]], ink, 5);
+  label("Фотокатод", 235, 66, {align: "center", size: 17});
+  label("Анод", 390, 66, {align: "center", size: 17});
+  label("Вакуумный фотоэлемент", 318, 216, {size: 15, color: muted});
+  line([[238, 183], [238, 277], [284, 277]]);
+  line([[336, 277], [464, 277], [464, 272]]);
+  line([[387, 192], [387, 222], [533, 222], [533, 234]]);
+  circle(309, 277, 25, "white", teal);
+  label("μA", 309, 283, {bold: true, size: 17});
+  if (open) {
+    arrow([139, 148], [232, 148], beam);
+    arrow([139, 174], [232, 174], beam);
+  } else {
+    line([[173, 137], [173, 188]], metal, 6);
+  }
+  box(446, 234, 104, 38, "#dce9ec", metal);
+  label("Источник U", 497, 258, {bold: true, size: 14});
+  label("U = φ анода − φ катода", 463, 315, {size: 14});
+  const regime = voltage < 0 ? "Торможение" : voltage > 0 ? "Ускорение" : "U = 0";
+  label(regime, 508, 156, {size: 15, color: muted});
+}
+
+function update() {
+  const voltage = value("bias") / 100;
+  const wavelength = value("wavelength");
+  const intensity = value("intensity") / 100;
+  const open = $("light").checked;
+  const energy = hcOverE / wavelength - workFunction;
+  const excess = energy + voltage; // U = φ_анода − φ_катода
+  const signal = open && energy > 0 ? intensity * 3.1 * Math.max(0, Math.min(energy, excess)) : 0;
+  reading("voltage", voltage, 2, "В");
+  reading("photocurrent", darkCurrent + signal + variation(0.0025), 3, "мкА");
+  status(open ? "Затвор открыт. Для измерения тёмного тока закройте затвор при том же напряжении." :
+    "Затвор закрыт. На микроамперметре виден тёмный ток.");
+  draw(wavelength, open, voltage);
+}
+
+$("bias").addEventListener("input", update);
+for (const step of [-1, 1]) {
+  $(step < 0 ? "minus" : "plus").addEventListener("click", () => {
+    $("bias").value = String(value("bias") + step);
+    update();
+  });
+}
+for (const id of ["wavelength", "intensity", "light"]) selectOptions(id, update);
+$("sample").addEventListener("click", update);
+$("reset").addEventListener("click", () => {
+  $("bias").value = "0";
+  $("wavelength").value = "436";
+  $("intensity").value = "100";
+  $("light").checked = false;
+  update();
+});
+$("reset").click();
+
+</script>
+</body>
+</html>
